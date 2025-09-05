@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.Python
+.venv
+venv/
+.pytest_cache/
+
+# Node/web
+node_modules/
+dist/
+build/
+
+# OS
+.DS_Store
+
+# Local credentials and environment
+service-account.json
+.env
+.env.*
+
+# Logs
+*.log
