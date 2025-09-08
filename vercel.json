@@ -3,7 +3,12 @@
     "api/**/*.py": {
       "memory": 1024,
       "maxDuration": 15,
-      "excludeFiles": "{venv/**,test*.py,*.md,FRONTEND_PLAN.md,dev_server.py}"
+      "excludeFiles": "{venv/**,test*.py,*.md,FRONTEND_PLAN.md,dev_server.py}",
+      "includeFiles": [
+        "api/__init__.py",
+        "api/auth.py",
+        "requirements.txt"
+      ]
     }
   },
   "headers": [
