@@ -1,7 +1,6 @@
 {
   "functions": {
     "api/**/*.py": {
-      "runtime": "python3.11",
       "memory": 1024,
       "maxDuration": 15,
       "excludeFiles": "{venv/**,test*.py,*.md,FRONTEND_PLAN.md,dev_server.py}"
@@ -22,4 +21,3 @@
     }
   ]
 }
-
