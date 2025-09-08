@@ -1,0 +1,25 @@
+{
+  "functions": {
+    "api/**/*.py": {
+      "runtime": "python3.11",
+      "memory": 1024,
+      "maxDuration": 15,
+      "excludeFiles": "{venv/**,test*.py,*.md,FRONTEND_PLAN.md,dev_server.py}"
+    }
+  },
+  "headers": [
+    {
+      "source": "/(sw\\.js|manifest\\.webmanifest)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(js|css|png|svg|ico)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ]
+}
+

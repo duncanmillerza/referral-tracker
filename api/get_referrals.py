@@ -16,7 +16,7 @@ def handler(request):
             'headers': {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type'
+                'Access-Control-Allow-Headers': 'Content-Type, X-Dept-Name, X-Dept-Pin, X-Clinician-Name'
             }
         }
     
@@ -41,9 +41,11 @@ def handler(request):
         headers = getattr(request, 'headers', {}) or {}
         headers_norm = {str(k).lower(): v for k, v in headers.items()}
 
-        dept_filter = request.args.get('department')
-        ward_filter = request.args.get('ward')
-        status_filter = request.args.get('status')  # 'pending' or 'seen'
+        # Vercel Python may expose query as request.args or request.query
+        query = getattr(request, 'args', None) or getattr(request, 'query', {}) or {}
+        dept_filter = query.get('department')
+        ward_filter = query.get('ward')
+        status_filter = query.get('status')  # 'pending' or 'seen'
 
         # Lightweight dept PIN validation (optional)
         dept_codes = os.environ.get('DEPT_CODES')
