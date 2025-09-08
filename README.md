@@ -8,6 +8,12 @@ Set the following Environment Variables in your Vercel project (Project → Sett
 - GOOGLE_CREDENTIALS: Entire contents of your Google service account JSON
 - DEPT_CODES (optional): JSON map of department → PIN for lightweight validation
 
+Auth (optional but recommended):
+
+- SESSION_SECRET: long random string for signing session cookies
+- APP_PASSWORD_BCRYPT: bcrypt hash of your shared passphrase
+- USERS: JSON mapping of username → { name, department } for auto-populate
+
 Example values:
 
 - SHEET_ID: 18b5tDHMLivTHYVEi9yXXzvUQxy2ycUa_cDLBD5xgAB4
@@ -18,6 +24,8 @@ Notes:
 
 - Leave `DEPT_CODES` unset if you don’t want PIN validation. If set, `api/get_referrals` will validate requests with headers `x-dept-name` and `x-dept-pin`. If valid and no `department` query is provided, it defaults to the header department.
 - The code reads these variables via `os.environ['SHEET_ID']`, `os.environ['GOOGLE_CREDENTIALS']`, and optional `os.environ.get('DEPT_CODES')`.
+ - Auth endpoints: `/api/login`, `/api/logout`, `/api/me`. APIs require a session cookie if auth is configured.
+ - Frontend shows a login screen; on login it stores the user’s name/department for auto-fill.
 
 ## Local development
 
@@ -31,6 +39,11 @@ Alternatively, export from the file directly in your shell for a one-off session
 ```sh
 export SHEET_ID="<your_sheet_id>"
 export GOOGLE_CREDENTIALS="$(cat service-account.json)"
+# Auth (example):
+export SESSION_SECRET="dev-secret-change-me"
+python -c "from passlib.hash import bcrypt; print(bcrypt.hash('dev-pass'))"  # copy result
+export APP_PASSWORD_BCRYPT="<paste_bcrypt_hash_here>"
+export USERS='{"alice":{"name":"Dr Alice","department":"Cardiology"}}'
 ```
 
 Run the simple dev server (serves static files and routes /api/*):

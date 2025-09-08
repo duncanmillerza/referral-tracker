@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
+from api.auth import require_auth
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -32,6 +33,10 @@ def handler(request):
         }
 
     try:
+        # Auth check
+        session, err = require_auth(request)
+        if err:
+            return err
         # Parse body JSON
         data = json.loads(request.body or '{}')
         headers = getattr(request, 'headers', {}) or {}
@@ -43,6 +48,12 @@ def handler(request):
             data['referring_clinician'] = headers_norm.get('x-clinician-name') or data.get('referring_clinician')
         if not data.get('dept_from'):
             data['dept_from'] = headers_norm.get('x-dept-name') or data.get('dept_from')
+
+        # Default clinician/department from session if still missing
+        if not data.get('referring_clinician') and session.get('name'):
+            data['referring_clinician'] = session['name']
+        if not data.get('dept_from') and session.get('department'):
+            data['dept_from'] = session['department']
 
         required_fields = [
             'patient_surname', 'ward', 'bed_number', 'referring_clinician',

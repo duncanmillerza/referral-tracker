@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
+from api.auth import require_auth
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -28,6 +29,10 @@ def handler(request):
         }
     
     try:
+        # Auth check
+        session, err = require_auth(request)
+        if err:
+            return err
         data = json.loads(request.body)
         headers = getattr(request, 'headers', {}) or {}
         headers_norm = {str(k).lower(): v for k, v in headers.items()}

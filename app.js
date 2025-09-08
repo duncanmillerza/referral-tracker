@@ -1,5 +1,5 @@
 (() => {
-  const VIEWS = ["submit", "dashboard", "settings"];
+  const VIEWS = ["login", "submit", "dashboard", "settings"];
   const REQUIRED_FIELDS = [
     'patient_surname','ward','bed_number','referring_clinician','dept_from','dept_to','urgency_level','referral_notes'
   ];
@@ -8,10 +8,10 @@
     VIEWS.forEach(v => {
       const section = document.getElementById(`view-${v}`);
       const btn = document.querySelector(`.nav-btn[data-target="${v}"]`);
-      if (!section || !btn) return;
+      if (!section) return;
       const isActive = v === name;
       section.toggleAttribute('hidden', !isActive);
-      btn.setAttribute('aria-selected', String(isActive));
+      if (btn) btn.setAttribute('aria-selected', String(isActive));
     });
     try { localStorage.setItem('lastView', name); } catch {}
 
@@ -46,6 +46,14 @@
 
   function setStatus(message, kind = '') {
     const el = getStatusEl();
+    if (!el) return;
+    el.classList.remove('error','success');
+    if (kind) el.classList.add(kind);
+    el.textContent = message || '';
+  }
+
+  function setLoginStatus(message, kind = '') {
+    const el = document.getElementById('login_status');
     if (!el) return;
     el.classList.remove('error','success');
     if (kind) el.classList.add(kind);
@@ -392,8 +400,29 @@
 
   window.addEventListener('DOMContentLoaded', () => {
     initNav();
-    const start = localStorage.getItem('lastView') || 'submit';
-    showView(VIEWS.includes(start) ? start : 'submit');
+    // Check auth: if logged in, proceed; else show login view
+    (async () => {
+      try {
+        if (window.AppApi && window.AppApi.me) {
+          const state = await window.AppApi.me();
+          if (state && state.authenticated && state.profile) {
+            try {
+              if (window.AppDB) await window.AppDB.setProfile({ name: state.profile.name || '', department: state.profile.department || '', pin: '' });
+              localStorage.setItem('profile.name', state.profile.name || '');
+              localStorage.setItem('profile.department', state.profile.department || '');
+            } catch {}
+            const start = localStorage.getItem('lastView') || 'submit';
+            showView(VIEWS.includes(start) ? start : 'submit');
+          } else {
+            showView('login');
+          }
+        } else {
+          showView('login');
+        }
+      } catch {
+        showView('login');
+      }
+    })();
     registerSW();
     // Attempt to flush any queued actions on load
     setTimeout(() => { registerSync(); }, 0);
@@ -408,6 +437,52 @@
     if (profileForm) {
       profileForm.addEventListener('submit', saveProfile);
       loadProfileIntoSettings();
+    }
+
+    // Logout button
+    const logoutBtn = q('#btn-logout');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async () => {
+        try { await (window.AppApi && window.AppApi.logout ? window.AppApi.logout() : Promise.resolve()); } catch {}
+        try {
+          if (window.AppDB) await window.AppDB.setProfile({ name: '', department: '', pin: '' });
+          localStorage.removeItem('profile.name');
+          localStorage.removeItem('profile.department');
+          localStorage.removeItem('profile.pin');
+          localStorage.removeItem('lastView');
+        } catch {}
+        showView('login');
+      });
+    }
+
+    // Login form
+    const loginForm = q('#login-form');
+    if (loginForm) {
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setLoginStatus('');
+        const username = (q('#login_username').value || '').trim();
+        const password = q('#login_password').value || '';
+        if (!username || !password) {
+          setLoginStatus('Enter username and password.', 'error');
+          return;
+        }
+        try {
+          const res = await window.AppApi.login(username, password);
+          const profile = res && res.profile ? res.profile : null;
+          if (profile) {
+            try {
+              if (window.AppDB) await window.AppDB.setProfile({ name: profile.name || '', department: profile.department || '', pin: '' });
+              localStorage.setItem('profile.name', profile.name || '');
+              localStorage.setItem('profile.department', profile.department || '');
+            } catch {}
+          }
+          setLoginStatus('Logged in.', 'success');
+          showView('submit');
+        } catch (err) {
+          setLoginStatus(err && err.message ? err.message : 'Login failed.', 'error');
+        }
+      });
     }
 
     // Install prompt handling

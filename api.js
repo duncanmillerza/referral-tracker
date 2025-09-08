@@ -70,5 +70,28 @@
     });
   }
 
-  window.AppApi = { getReferrals, submitReferral, updateReferral };
+  window.AppApi = { getReferrals, submitReferral, updateReferral, login, me, logout };
 })();
+  async function login(username, password) {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data || data.error) {
+      const err = new Error(data && data.error ? data.error : 'Login failed');
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  }
+
+  async function me() {
+    const res = await fetch('/api/me', { headers: { 'Accept': 'application/json' } });
+    try { return await res.json(); } catch { return { authenticated: false }; }
+  }
+
+  async function logout() {
+    await fetch('/api/logout', { method: 'POST', headers: { 'Accept': 'application/json' } });
+  }

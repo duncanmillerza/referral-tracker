@@ -2,6 +2,7 @@ import json
 import os
 import gspread
 from google.oauth2.service_account import Credentials
+from api.auth import require_auth
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -27,6 +28,11 @@ def handler(request):
         }
     
     try:
+        # Auth check
+        session, err = require_auth(request)
+        if err:
+            return err
+
         # Set up Google Sheets connection
         credentials_json = json.loads(os.environ['GOOGLE_CREDENTIALS'])
         credentials = Credentials.from_service_account_info(credentials_json).with_scopes(SCOPES)
