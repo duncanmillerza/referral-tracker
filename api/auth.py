@@ -1,10 +1,18 @@
 import os
 import json
+import hmac
 from typing import Optional, Tuple
 from http import cookies
 
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from passlib.hash import bcrypt
+
+# Optional import: if passlib isn't available, we fall back to APP_PASSWORD
+try:
+    from passlib.hash import bcrypt  # type: ignore
+    _BCRYPT_AVAILABLE = True
+except Exception:
+    bcrypt = None  # type: ignore
+    _BCRYPT_AVAILABLE = False
 
 
 SESSION_COOKIE = "session"
@@ -24,13 +32,22 @@ def _serializer() -> URLSafeTimedSerializer:
 
 
 def verify_password(passphrase: str) -> bool:
+    # Preferred: bcrypt hash via APP_PASSWORD_BCRYPT
     hashed = os.environ.get("APP_PASSWORD_BCRYPT")
-    if not hashed:
-        return False
-    try:
-        return bcrypt.verify(passphrase, hashed)
-    except Exception:
-        return False
+    if hashed and _BCRYPT_AVAILABLE and bcrypt is not None:
+        try:
+            return bcrypt.verify(passphrase, hashed)
+        except Exception:
+            return False
+    # Fallback: exact match against APP_PASSWORD (timing-safe)
+    plain = os.environ.get("APP_PASSWORD")
+    if plain is not None:
+        try:
+            return hmac.compare_digest(str(passphrase), str(plain))
+        except Exception:
+            return False
+    # Neither configured
+    return False
 
 
 def load_users() -> dict:
@@ -111,4 +128,3 @@ def require_auth(request) -> Tuple[Optional[dict], Optional[dict]]:
             'body': json.dumps({'success': False, 'error': 'Unauthorized'})
         }
     return sess, None
-

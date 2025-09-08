@@ -11,7 +11,7 @@ Set the following Environment Variables in your Vercel project (Project → Sett
 Auth (optional but recommended):
 
 - SESSION_SECRET: long random string for signing session cookies
-- APP_PASSWORD_BCRYPT: bcrypt hash of your shared passphrase
+- EITHER APP_PASSWORD_BCRYPT (preferred): bcrypt hash of your passphrase, OR APP_PASSWORD (plain; for testing only)
 - USERS: JSON mapping of username → { name, department } for auto-populate
 
 Example values:
@@ -41,8 +41,9 @@ export SHEET_ID="<your_sheet_id>"
 export GOOGLE_CREDENTIALS="$(cat service-account.json)"
 # Auth (example):
 export SESSION_SECRET="dev-secret-change-me"
-python -c "from passlib.hash import bcrypt; print(bcrypt.hash('dev-pass'))"  # copy result
-export APP_PASSWORD_BCRYPT="<paste_bcrypt_hash_here>"
+python -c "from passlib.hash import bcrypt; print(bcrypt.hash('dev-pass'))"  # copy result (optional)
+export APP_PASSWORD_BCRYPT="<paste_bcrypt_hash_here>"   # or use APP_PASSWORD below for quick test
+export APP_PASSWORD="dev-pass"
 export USERS='{"alice":{"name":"Dr Alice","department":"Cardiology"}}'
 ```
 
